@@ -68,21 +68,17 @@
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
         }
 
-        .card:hover {
+        .card:hover:not(.flipped):not(.matched) {
             transform: translateY(-5px);
         }
 
         .card.flipped {
-            transform: rotateY(180deg);
+            transform: rotateY(180deg) !important;
         }
 
         .card.matched {
             opacity: 0.6;
             cursor: default;
-        }
-
-        .card.matched:hover {
-            transform: rotateY(180deg);
         }
 
         .card-face {
