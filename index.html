@@ -461,12 +461,22 @@
             const pairId2 = card2.dataset.pairId;
 
             if (pairId1 === pairId2) {
+                console.log('✅ MATCH DETECTED! Pair ID:', pairId1);
                 setTimeout(() => {
+                    console.log('Before adding classes - Card1:', card1.className);
+                    console.log('Before adding classes - Card2:', card2.className);
+
                     card1.classList.add('matched');
                     card2.classList.add('matched');
                     // Ensure cards stay flipped
                     card1.classList.add('flipped');
                     card2.classList.add('flipped');
+
+                    console.log('After adding classes - Card1:', card1.className);
+                    console.log('After adding classes - Card2:', card2.className);
+                    console.log('Card1 content:', card1.querySelector('.card-back').textContent.trim());
+                    console.log('Card2 content:', card2.querySelector('.card-back').textContent.trim());
+
                     matchedPairs++;
                     document.getElementById('matches').textContent = matchedPairs;
 
