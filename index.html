@@ -33,6 +33,13 @@
             text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
         }
 
+        .player-name {
+            color: white;
+            font-size: 1.3rem;
+            margin-bottom: 15px;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+        }
+
         .stats {
             display: flex;
             gap: 30px;
@@ -40,6 +47,7 @@
             margin-bottom: 20px;
             color: white;
             font-size: 1.2rem;
+            flex-wrap: wrap;
         }
 
         .stats div {
@@ -81,6 +89,15 @@
             cursor: default;
         }
 
+        .card.hint {
+            animation: pulse 0.5s ease-in-out;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: rotateY(180deg) scale(1); }
+            50% { transform: rotateY(180deg) scale(1.05); }
+        }
+
         .card-face {
             position: absolute;
             width: 100%;
@@ -118,8 +135,15 @@
             color: #667eea;
         }
 
-        .reset-button {
+        .button-container {
             margin-top: 20px;
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .reset-button, .hint-button, .leaderboard-button {
             padding: 12px 30px;
             font-size: 1.1rem;
             background: white;
@@ -132,12 +156,27 @@
             transition: transform 0.2s;
         }
 
-        .reset-button:hover {
+        .hint-button {
+            background: #ffd700;
+            color: #333;
+        }
+
+        .leaderboard-button {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .reset-button:hover, .hint-button:hover, .leaderboard-button:hover {
             transform: scale(1.05);
         }
 
-        .reset-button:active {
+        .reset-button:active, .hint-button:active, .leaderboard-button:active {
             transform: scale(0.95);
+        }
+
+        .hint-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
 
         .win-message {
@@ -146,6 +185,105 @@
             margin-top: 20px;
             font-weight: bold;
             text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+            max-width: 500px;
+            width: 90%;
+        }
+
+        .modal-content h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+
+        .modal-content input {
+            width: 100%;
+            padding: 15px;
+            font-size: 1.1rem;
+            border: 2px solid #667eea;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            outline: none;
+        }
+
+        .modal-content input:focus {
+            border-color: #764ba2;
+        }
+
+        .modal-content button {
+            padding: 12px 40px;
+            font-size: 1.1rem;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .modal-content button:hover {
+            background: #764ba2;
+        }
+
+        .leaderboard {
+            color: #333;
+            margin-top: 20px;
+        }
+
+        .leaderboard h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+
+        .leaderboard-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .leaderboard-list li {
+            padding: 10px;
+            margin: 5px 0;
+            background: #f0f0f0;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .leaderboard-list li:nth-child(1) {
+            background: #ffd700;
+            font-weight: bold;
+        }
+
+        .leaderboard-list li:nth-child(2) {
+            background: #c0c0c0;
+        }
+
+        .leaderboard-list li:nth-child(3) {
+            background: #cd7f32;
         }
 
         @media (max-width: 600px) {
@@ -173,17 +311,44 @@
     </style>
 </head>
 <body>
+    <!-- Name Input Modal -->
+    <div id="nameModal" class="modal active">
+        <div class="modal-content">
+            <h2>🐾 Welcome to Animal Memory Game! 🐾</h2>
+            <p>Enter your first name to start:</p>
+            <input type="text" id="playerNameInput" placeholder="Your Name" maxlength="20" autofocus>
+            <button onclick="startGame()">Start Game</button>
+        </div>
+    </div>
+
+    <!-- Leaderboard Modal -->
+    <div id="leaderboardModal" class="modal">
+        <div class="modal-content">
+            <h2>🏆 Leaderboard 🏆</h2>
+            <div class="leaderboard">
+                <ul class="leaderboard-list" id="leaderboardList"></ul>
+            </div>
+            <button onclick="closeLeaderboard()">Close</button>
+        </div>
+    </div>
+
     <div class="game-container">
         <h1>🐾 Animal Memory Game 🐾</h1>
+        <div class="player-name" id="playerDisplay"></div>
 
         <div class="stats">
             <div>Moves: <span id="moves">0</span></div>
             <div>Matches: <span id="matches">0</span> / 8</div>
+            <div>Hints: <span id="hints">3</span></div>
         </div>
 
         <div class="game-board" id="gameBoard"></div>
 
-        <button class="reset-button" onclick="resetGame()">New Game</button>
+        <div class="button-container">
+            <button class="hint-button" id="hintButton" onclick="useHint()">💡 Hint</button>
+            <button class="reset-button" onclick="resetGame()">New Game</button>
+            <button class="leaderboard-button" onclick="showLeaderboard()">🏆 Leaderboard</button>
+        </div>
         <div class="win-message" id="winMessage"></div>
     </div>
 
@@ -204,6 +369,24 @@
         let matchedPairs = 0;
         let moves = 0;
         let canFlip = true;
+        let playerName = '';
+        let hintsRemaining = 3;
+        let gameStarted = false;
+
+        function startGame() {
+            const nameInput = document.getElementById('playerNameInput');
+            playerName = nameInput.value.trim();
+
+            if (!playerName) {
+                alert('Please enter your name!');
+                return;
+            }
+
+            document.getElementById('nameModal').classList.remove('active');
+            document.getElementById('playerDisplay').textContent = `Player: ${playerName}`;
+            gameStarted = true;
+            resetGame();
+        }
 
         function createCards() {
             cards = [];
@@ -292,8 +475,7 @@
 
                     if (matchedPairs === animals.length) {
                         setTimeout(() => {
-                            document.getElementById('winMessage').textContent =
-                                `🎉 You won in ${moves} moves! 🎉`;
+                            gameWon();
                         }, 500);
                     }
                 }, 500);
@@ -307,21 +489,131 @@
             }
         }
 
+        function gameWon() {
+            document.getElementById('winMessage').textContent =
+                `🎉 ${playerName}, you won in ${moves} moves! 🎉`;
+
+            saveScore(playerName, moves);
+        }
+
+        function useHint() {
+            if (hintsRemaining <= 0) {
+                alert('No hints remaining!');
+                return;
+            }
+
+            if (!canFlip) return;
+
+            // Get all unmatched cards
+            const allCards = document.querySelectorAll('.card');
+            const unmatchedCards = Array.from(allCards).filter(card =>
+                !card.classList.contains('matched')
+            );
+
+            if (unmatchedCards.length === 0) return;
+
+            // Group by pairId
+            const pairs = {};
+            unmatchedCards.forEach(card => {
+                const pairId = card.dataset.pairId;
+                if (!pairs[pairId]) pairs[pairId] = [];
+                pairs[pairId].push(card);
+            });
+
+            // Find a complete unmatched pair
+            const completePairs = Object.values(pairs).filter(pair => pair.length === 2);
+            if (completePairs.length === 0) return;
+
+            // Pick a random pair
+            const randomPair = completePairs[Math.floor(Math.random() * completePairs.length)];
+
+            // Flip them temporarily
+            canFlip = false;
+            randomPair.forEach(card => {
+                card.classList.add('flipped', 'hint');
+            });
+
+            // Flip back after 2 seconds
+            setTimeout(() => {
+                randomPair.forEach(card => {
+                    card.classList.remove('flipped', 'hint');
+                });
+                canFlip = true;
+            }, 2000);
+
+            hintsRemaining--;
+            document.getElementById('hints').textContent = hintsRemaining;
+
+            if (hintsRemaining === 0) {
+                document.getElementById('hintButton').disabled = true;
+            }
+        }
+
         function resetGame() {
             matchedPairs = 0;
             moves = 0;
             flippedCards = [];
             canFlip = true;
+            hintsRemaining = 3;
             document.getElementById('moves').textContent = '0';
             document.getElementById('matches').textContent = '0';
+            document.getElementById('hints').textContent = '3';
             document.getElementById('winMessage').textContent = '';
+            document.getElementById('hintButton').disabled = false;
             cards = createCards();
             renderBoard();
+        }
+
+        function saveScore(name, score) {
+            let leaderboard = JSON.parse(localStorage.getItem('animalGameLeaderboard')) || [];
+
+            leaderboard.push({
+                name: name,
+                score: score,
+                date: new Date().toISOString()
+            });
+
+            // Sort by score (lower is better)
+            leaderboard.sort((a, b) => a.score - b.score);
+
+            // Keep top 10
+            leaderboard = leaderboard.slice(0, 10);
+
+            localStorage.setItem('animalGameLeaderboard', JSON.stringify(leaderboard));
+        }
+
+        function showLeaderboard() {
+            const leaderboard = JSON.parse(localStorage.getItem('animalGameLeaderboard')) || [];
+            const leaderboardList = document.getElementById('leaderboardList');
+
+            if (leaderboard.length === 0) {
+                leaderboardList.innerHTML = '<li>No scores yet!</li>';
+            } else {
+                leaderboardList.innerHTML = leaderboard.map((entry, index) => `
+                    <li>
+                        <span>${index + 1}. ${entry.name}</span>
+                        <span>${entry.score} moves</span>
+                    </li>
+                `).join('');
+            }
+
+            document.getElementById('leaderboardModal').classList.add('active');
+        }
+
+        function closeLeaderboard() {
+            document.getElementById('leaderboardModal').classList.remove('active');
         }
 
         // Initialize game
         cards = createCards();
         renderBoard();
+
+        // Enter key to submit name
+        document.getElementById('playerNameInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                startGame();
+            }
+        });
     </script>
 </body>
 </html>
