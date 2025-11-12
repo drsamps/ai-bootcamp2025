@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Animal Memory Game</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * {
             margin: 0;
@@ -357,6 +358,11 @@
     </div>
 
     <script>
+        // Initialize Supabase
+        const SUPABASE_URL = 'https://opqvejzewknhdysszlci.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9wcXZlanpld2tuaGR5c3N6bGNpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI4ODg1MzcsImV4cCI6MjA3ODQ2NDUzN30.FqEe1YskJPY3jtasGyV12hj0iDZ1zgeOQeCMKWGcIvQ';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
         const animals = [
             { animal: '🐶', sound: 'WOOF!' },
             { animal: '🐱', sound: 'MEOW!' },
@@ -601,40 +607,57 @@
             renderBoard();
         }
 
-        function saveScore(name, score) {
-            let leaderboard = JSON.parse(localStorage.getItem('animalGameLeaderboard')) || [];
+        async function saveScore(name, score) {
+            try {
+                const { data, error } = await supabase
+                    .from('leaderboard')
+                    .insert([
+                        { player_name: name, score: score }
+                    ]);
 
-            leaderboard.push({
-                name: name,
-                score: score,
-                date: new Date().toISOString()
-            });
-
-            // Sort by score (lower is better)
-            leaderboard.sort((a, b) => a.score - b.score);
-
-            // Keep top 10
-            leaderboard = leaderboard.slice(0, 10);
-
-            localStorage.setItem('animalGameLeaderboard', JSON.stringify(leaderboard));
+                if (error) {
+                    console.error('Error saving score:', error);
+                } else {
+                    console.log('Score saved successfully!');
+                }
+            } catch (err) {
+                console.error('Error saving to Supabase:', err);
+            }
         }
 
-        function showLeaderboard() {
-            const leaderboard = JSON.parse(localStorage.getItem('animalGameLeaderboard')) || [];
+        async function showLeaderboard() {
             const leaderboardList = document.getElementById('leaderboardList');
-
-            if (leaderboard.length === 0) {
-                leaderboardList.innerHTML = '<li>No scores yet!</li>';
-            } else {
-                leaderboardList.innerHTML = leaderboard.map((entry, index) => `
-                    <li>
-                        <span>${index + 1}. ${entry.name}</span>
-                        <span>${entry.score} moves</span>
-                    </li>
-                `).join('');
-            }
+            leaderboardList.innerHTML = '<li>Loading...</li>';
 
             document.getElementById('leaderboardModal').classList.add('active');
+
+            try {
+                const { data: leaderboard, error } = await supabase
+                    .from('leaderboard')
+                    .select('player_name, score, created_at')
+                    .order('score', { ascending: true })
+                    .limit(10);
+
+                if (error) {
+                    console.error('Error fetching leaderboard:', error);
+                    leaderboardList.innerHTML = '<li>Error loading leaderboard</li>';
+                    return;
+                }
+
+                if (!leaderboard || leaderboard.length === 0) {
+                    leaderboardList.innerHTML = '<li>No scores yet!</li>';
+                } else {
+                    leaderboardList.innerHTML = leaderboard.map((entry, index) => `
+                        <li>
+                            <span>${index + 1}. ${entry.player_name}</span>
+                            <span>${entry.score} moves</span>
+                        </li>
+                    `).join('');
+                }
+            } catch (err) {
+                console.error('Error loading from Supabase:', err);
+                leaderboardList.innerHTML = '<li>Error loading leaderboard</li>';
+            }
         }
 
         function closeLeaderboard() {
